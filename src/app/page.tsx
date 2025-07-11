@@ -92,6 +92,10 @@ export default function Home() {
         setIsLoading(false);
       });
 
+      vapiRef.current.on('tool-call-result', (result) => {
+        console.log('Pearch tool call result:', result);
+      });
+
     } catch (err) {
       console.error('Failed to initialize Vapi:', err);
       setError(`Failed to initialize Vapi: ${err}`);
