@@ -58,7 +58,7 @@ export default async function handler(req, res) {
 
     const url = 'https://api.pearch.ai/v1/search';
     const headers = { Authorization: `Bearer ${process.env.NEXT_PUBLIC_PEARCH_API_KEY}` };
-    const params = { query, limit: 2, type: 'fast' };
+    const params = { query, limit: 4, type: 'fast' };
 
     // Log the outgoing query
     console.log('Sending pearch request -', query);
@@ -67,11 +67,12 @@ export default async function handler(req, res) {
       const response = await axios.get(url, { headers, params });
       // Format and log the experts
       const experts = Array.isArray(response.data) ? response.data : [];
-      console.log('--- Pearch API Formatted Experts ---');
+      let formattedText = '';
       experts.forEach((expert, idx) => {
         const fullName = [expert.first_name, expert.last_name].filter(Boolean).join(' ');
         const title = expert.title || '';
         const linkedin = expert.linkedin_slug ? `https://linkedin.com/in/${expert.linkedin_slug}` : '';
+        formattedText += `Expert ${idx + 1}\n1. Full name: ${fullName}\n2. Title: ${title}\n3. Linkedin url: ${linkedin}\n---------------\n`;
         console.log(`Expert ${idx + 1}`);
         console.log(`1. Full name: ${fullName}`);
         console.log(`2. Title: ${title}`);
@@ -99,7 +100,8 @@ export default async function handler(req, res) {
             toolCallId,
             result: resultObj
           }
-        ]
+        ],
+        formattedText
       });
     } catch (error) {
       console.log('Pearch API error:', error.response?.data || error.message);
