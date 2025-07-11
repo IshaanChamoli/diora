@@ -26,6 +26,11 @@ export default function Home() {
   const [positions, setPositions] = useState<Array<{x: number, y: number, floatId: string, phase: number, isNew: boolean, newBatchIndex?: number}>>([]);
   const [lastBatchIds, setLastBatchIds] = useState<string[]>([]);
 
+  const displayUiTesterButton =
+    typeof process !== 'undefined' &&
+    typeof process.env !== 'undefined' &&
+    process.env.NEXT_PUBLIC_DISPLAY_UI_TESTER_BUTTON === 'true';
+
   useEffect(() => {
     // Initialize Vapi
     const apiKey = process.env.NEXT_PUBLIC_VAPI_API_KEY;
@@ -240,8 +245,9 @@ export default function Home() {
     const orbX = width / 2;
     const orbY = height / 2 - 100;
     const cardSize = 120;
-    const baseRadius = 180;
-    const step = 80;
+    const baseRadius = 220;
+    const step = 150;
+    const xScale = 1.4;
     const goldenAngle = 137.5 * (Math.PI / 180);
     const total = expertCards.length;
     const newPositions: Array<{x: number, y: number, floatId: string, phase: number, isNew: boolean, newBatchIndex?: number}> = [];
@@ -257,9 +263,12 @@ export default function Home() {
       if (!pos) {
         // New card, assign a new position
         const radius = baseRadius + step * Math.floor(i / 6);
-        const angle = i * goldenAngle;
-        const x = orbX + radius * Math.cos(angle) - cardSize / 2;
-        const y = orbY + radius * Math.sin(angle) - cardSize / 2;
+        const angle = i * goldenAngle + Math.random() * 0.15;
+        let x = orbX + xScale * radius * Math.cos(angle) - cardSize / 2;
+        let y = orbY + radius * Math.sin(angle) - cardSize / 2;
+        // Clamp so cards never go offscreen
+        x = Math.max(8, Math.min(x, width - cardSize - 8));
+        y = Math.max(8, Math.min(y, height - cardSize - 8));
         const phase = (i * 2 * Math.PI) / Math.max(1, total);
         pos = { x, y, floatId: card.floatId, phase, isNew: true };
         positionsRef.current.set(card.floatId, pos);
@@ -324,29 +333,31 @@ export default function Home() {
       fontFamily: 'Arial, sans-serif',
       position: 'relative'
     }}>
-      {/* Test Button (top-right corner) */}
-      <button
-        onClick={handleAddTestJohnDoes}
-        style={{
-          position: 'fixed',
-          top: 24,
-          right: 24,
-          zIndex: 2000,
-          background: '#fff',
-          color: '#111',
-          border: '2px solid #000',
-          borderRadius: '2rem',
-          padding: '0.5rem 1.2rem',
-          fontWeight: 700,
-          fontSize: '1rem',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-          cursor: 'pointer',
-          opacity: 1,
-          transition: 'background 0.2s, color 0.2s',
-        }}
-      >
-        + Add 4 John Does
-      </button>
+      {/* Test Button (top-right corner) - only if enabled in env */}
+      {displayUiTesterButton && (
+        <button
+          onClick={handleAddTestJohnDoes}
+          style={{
+            position: 'fixed',
+            top: 24,
+            right: 24,
+            zIndex: 2000,
+            background: '#fff',
+            color: '#111',
+            border: '2px solid #000',
+            borderRadius: '2rem',
+            padding: '0.5rem 1.2rem',
+            fontWeight: 700,
+            fontSize: '1rem',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            cursor: 'pointer',
+            opacity: 1,
+            transition: 'background 0.2s, color 0.2s',
+          }}
+        >
+          + Add 4 John Does
+        </button>
+      )}
 
       {/* Circular Orb */}
       <div
@@ -434,12 +445,9 @@ export default function Home() {
                   pointerEvents: 'auto',
                   opacity: pos.isNew ? 0 : 1,
                   transform: pos.isNew ? 'scale(0.8)' : 'scale(1)',
-                  animation: pos.isNew
-                    ? `fadeInScale 0.7s cubic-bezier(.4,2,.6,1) ${pos.newBatchIndex ? 0.1 * pos.newBatchIndex : 0}s forwards, floatHover 5s ease-in-out infinite`
-                    : `floatHover 5s ease-in-out infinite`,
-                  animationDelay: pos.isNew && typeof pos.newBatchIndex === 'number'
-                    ? `${0.1 * pos.newBatchIndex}s, ${pos.phase}s`
-                    : `${pos.phase}s`,
+                  animation: pos.isNew && typeof pos.newBatchIndex === 'number'
+                    ? `fadeInScale 0.7s cubic-bezier(.4,2,.6,1) ${0.1 * pos.newBatchIndex}s forwards, floatHover 5s ease-in-out infinite ${pos.phase}s`
+                    : `floatHover 5s ease-in-out infinite ${pos.phase}s`,
                   willChange: 'transform',
                 }}
               >
@@ -526,6 +534,12 @@ export default function Home() {
           60%  { transform: translate(-2.5px, -2px) scale(1.01); }
           80%  { transform: translate(2px, 2.5px) scale(0.99); }
           100% { transform: translate(0px, 0px) scale(1); }
+        }
+        html, body {
+          overflow: hidden !important;
+        }
+        #__next, body > div:first-child {
+          overflow: hidden !important;
         }
       `}</style>
     </div>
