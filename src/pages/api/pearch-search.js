@@ -65,13 +65,39 @@ export default async function handler(req, res) {
 
     try {
       const response = await axios.get(url, { headers, params });
-      // Log the raw JSON response
-      console.log('Pearch API response:', response.data);
+      // Format and log the experts
+      const experts = Array.isArray(response.data) ? response.data : [];
+      console.log('--- Pearch API Formatted Experts ---');
+      experts.forEach((expert, idx) => {
+        const fullName = [expert.first_name, expert.last_name].filter(Boolean).join(' ');
+        const title = expert.title || '';
+        const linkedin = expert.linkedin_slug ? `https://linkedin.com/in/${expert.linkedin_slug}` : '';
+        console.log(`Expert ${idx + 1}`);
+        console.log(`1. Full name: ${fullName}`);
+        console.log(`2. Title: ${title}`);
+        console.log(`3. Linkedin url: ${linkedin}`);
+        console.log('---------------');
+      });
+      console.log('======================================');
+
+      // Send back as a JSON object with expert_1, expert_2, ...
+      const resultObj = {};
+      experts.forEach((expert, idx) => {
+        resultObj[`expert_${idx + 1}`] = {
+          full_name: [expert.first_name, expert.last_name].filter(Boolean).join(' '),
+          title: expert.title || '',
+          linkedin_url: expert.linkedin_slug ? `https://linkedin.com/in/${expert.linkedin_slug}` : '',
+          experiences: expert.experiences || [],
+          educations: expert.educations || [],
+          awards: expert.awards || []
+        };
+      });
+
       return res.status(200).json({
         results: [
           {
             toolCallId,
-            result: response.data
+            result: resultObj
           }
         ]
       });
